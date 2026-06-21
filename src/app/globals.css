@@ -1,26 +1,240 @@
 @import "tailwindcss";
 
+/* Class-based dark mode (driven by next-themes) instead of prefers-color-scheme */
+@custom-variant dark (&:is(.dark *));
+
+/* ============================================================================
+   Relay — "Operations console / signal relay" design system
+   Signature: monospaced signal readouts (ticket IDs, SLA timers, metrics) over
+   a calm instrument-panel neutral system, with a single warm "signal gold"
+   beacon accent. Deliberately avoids templated AI defaults.
+   ========================================================================== */
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --radius: 0.5rem;
+
+  /* Surfaces & ink */
+  --background: #f6f7f8;
+  --foreground: #16191c;
+  --card: #ffffff;
+  --card-foreground: #16191c;
+  --popover: #ffffff;
+  --popover-foreground: #16191c;
+
+  /* Signal gold — the relay beacon (brand / primary) */
+  --primary: #e0a200;
+  --primary-foreground: #1a1303;
+
+  --secondary: #edf0f1;
+  --secondary-foreground: #2a3036;
+  --muted: #edf0f1;
+  --muted-foreground: #5a636c;
+  --accent: #eaedee;
+  --accent-foreground: #16191c;
+
+  --destructive: #e5484d;
+  --destructive-foreground: #ffffff;
+
+  --border: #e3e6e8;
+  --input: #dadee0;
+  --ring: #c68a00;
+
+  /* Brand scale (links / accent text on light surfaces, AA-safe) */
+  --brand: #e0a200;
+  --brand-strong: #a87400;
+
+  /* Ticket status signals */
+  --status-open: #2d6be4;
+  --status-pending: #7c5cd6;
+  --status-hold: #8a929b;
+  --status-resolved: #1e9e6a;
+  --status-closed: #5a636c;
+
+  /* Priority signals */
+  --priority-urgent: #e5484d;
+  --priority-high: #ec7a1c;
+  --priority-normal: #5a636c;
+  --priority-low: #9aa2aa;
+
+  /* Charts */
+  --chart-1: #e0a200;
+  --chart-2: #2d6be4;
+  --chart-3: #1e9e6a;
+  --chart-4: #7c5cd6;
+  --chart-5: #ec7a1c;
+
+  /* Sidebar (console rail) */
+  --sidebar: #ffffff;
+  --sidebar-foreground: #2a3036;
+  --sidebar-primary: #e0a200;
+  --sidebar-primary-foreground: #1a1303;
+  --sidebar-accent: #f1f3f4;
+  --sidebar-accent-foreground: #16191c;
+  --sidebar-border: #e3e6e8;
+  --sidebar-ring: #c68a00;
+}
+
+.dark {
+  --background: #0e1113;
+  --foreground: #e8ecee;
+  --card: #15191c;
+  --card-foreground: #e8ecee;
+  --popover: #15191c;
+  --popover-foreground: #e8ecee;
+
+  --primary: #f2b526;
+  --primary-foreground: #1a1303;
+
+  --secondary: #1c2125;
+  --secondary-foreground: #c7cdd2;
+  --muted: #1c2125;
+  --muted-foreground: #9ba4ac;
+  --accent: #1f262b;
+  --accent-foreground: #e8ecee;
+
+  --destructive: #f2555a;
+  --destructive-foreground: #ffffff;
+
+  --border: #262d31;
+  --input: #2a3237;
+  --ring: #f2b526;
+
+  --brand: #f2b526;
+  --brand-strong: #f2b526;
+
+  --status-open: #5b8ef0;
+  --status-pending: #9b7ef0;
+  --status-hold: #9ba4ac;
+  --status-resolved: #34b87f;
+  --status-closed: #7b848c;
+
+  --priority-urgent: #f2555a;
+  --priority-high: #f58a3c;
+  --priority-normal: #9ba4ac;
+  --priority-low: #6b747c;
+
+  --chart-1: #f2b526;
+  --chart-2: #5b8ef0;
+  --chart-3: #34b87f;
+  --chart-4: #9b7ef0;
+  --chart-5: #f58a3c;
+
+  --sidebar: #121619;
+  --sidebar-foreground: #c7cdd2;
+  --sidebar-primary: #f2b526;
+  --sidebar-primary-foreground: #1a1303;
+  --sidebar-accent: #1c2125;
+  --sidebar-accent-foreground: #e8ecee;
+  --sidebar-border: #20262a;
+  --sidebar-ring: #f2b526;
 }
 
 @theme inline {
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  --color-brand: var(--brand);
+  --color-brand-strong: var(--brand-strong);
+
+  --color-status-open: var(--status-open);
+  --color-status-pending: var(--status-pending);
+  --color-status-hold: var(--status-hold);
+  --color-status-resolved: var(--status-resolved);
+  --color-status-closed: var(--status-closed);
+
+  --color-priority-urgent: var(--priority-urgent);
+  --color-priority-high: var(--priority-high);
+  --color-priority-normal: var(--priority-normal);
+  --color-priority-low: var(--priority-low);
+
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+
+  --font-sans: var(--font-sans);
+  --font-display: var(--font-display);
+  --font-mono: var(--font-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  html {
+    -webkit-text-size-adjust: 100%;
+    text-rendering: optimizeLegibility;
+  }
+
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+    font-synthesis-weight: none;
+  }
+
+  /* Signal readouts: tabular figures + slashed zero for IDs, SLA, metrics */
+  .font-mono,
+  [data-signal] {
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: "zero" 1;
+    letter-spacing: -0.01em;
+  }
+
+  /* Visible keyboard focus on native interactive elements (a11y floor) */
+  a:focus-visible,
+  button:focus-visible,
+  input:focus-visible,
+  select:focus-visible,
+  textarea:focus-visible,
+  [role="button"]:focus-visible,
+  [tabindex]:focus-visible {
+    @apply outline-none ring-2 ring-ring ring-offset-2 ring-offset-background;
+  }
+
+  ::selection {
+    background-color: color-mix(in oklab, var(--primary) 26%, transparent);
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
