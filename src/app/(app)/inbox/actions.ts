@@ -47,6 +47,17 @@ export async function createTicket(
   if (!org || !user) return { error: "Not authenticated." };
 
   const supabase = await createClient();
+
+  // Next per-org ticket number (the trigger is a fallback for null values).
+  const { data: maxRow } = await supabase
+    .from("tickets")
+    .select("number")
+    .eq("organization_id", org.organization.id)
+    .order("number", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  const nextNumber = (maxRow?.number ?? 0) + 1;
+
   const { data, error } = await supabase
     .from("tickets")
     .insert({
@@ -57,7 +68,7 @@ export async function createTicket(
       category: parsed.data.category || null,
       customer_id: parsed.data.customerId ?? null,
       created_by: user.id,
-      number: 0, // overwritten by the set_ticket_number trigger
+      number: nextNumber,
     })
     .select("id")
     .single();

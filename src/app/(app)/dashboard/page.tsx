@@ -1,4 +1,6 @@
+import Link from "next/link";
 import type { Metadata } from "next";
+import { formatDistanceToNow } from "date-fns";
 import {
   BarChart3,
   CheckCircle2,
@@ -14,10 +16,16 @@ import {
   getActiveOrganization,
   getDashboardStats,
 } from "@/lib/data/organizations";
+import {
+  getAvgFirstResponseMinutes,
+  getVolumeByCategory,
+  getRecentActivity,
+} from "@/lib/data/dashboard";
 import { Button } from "@/components/ui/button";
 import { Avatar } from "@/components/ui/avatar";
 import { StatCard } from "@/components/app/stat-card";
 import { EmptyState } from "@/components/app/empty-state";
+import { SeedButton } from "@/components/app/seed-button";
 
 export const metadata: Metadata = { title: "Dashboard" };
 
@@ -28,18 +36,31 @@ function greeting(): string {
   return "Good evening";
 }
 
-const SoonTag = () => (
-  <span className="rounded bg-black/5 px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-wide opacity-70 dark:bg-white/10">
-    Soon
-  </span>
-);
+function formatDuration(minutes: number | null): string {
+  if (minutes == null) return "—";
+  if (minutes < 60) return `${minutes}m`;
+  const h = Math.floor(minutes / 60);
+  const m = minutes % 60;
+  return m ? `${h}h ${m}m` : `${h}h`;
+}
 
 export default async function DashboardPage() {
   const [org, user] = await Promise.all([getActiveOrganization(), getUser()]);
   if (!org || !user) return null;
+  const orgId = org.organization.id;
 
-  const stats = await getDashboardStats(org.organization.id);
+  const [stats, avgMinutes, volume, activity] = await Promise.all([
+    getDashboardStats(orgId),
+    getAvgFirstResponseMinutes(orgId),
+    getVolumeByCategory(orgId),
+    getRecentActivity(orgId),
+  ]);
+
   const name = displayName(user);
+  const totalTickets =
+    stats.openTickets + stats.pendingTickets + stats.resolvedTickets;
+  const isEmpty = totalTickets === 0;
+  const maxVolume = Math.max(...volume.map((v) => v.count), 1);
 
   return (
     <div className="mx-auto max-w-6xl space-y-6">
@@ -56,11 +77,15 @@ export default async function DashboardPage() {
             .
           </p>
         </div>
-        <Button disabled className="gap-2 self-start">
-          <Ticket />
-          New ticket
-          <SoonTag />
-        </Button>
+        <div className="flex gap-2 self-start">
+          {isEmpty && org.role === "admin" && <SeedButton />}
+          <Button asChild className="gap-2">
+            <Link href="/inbox">
+              <Inbox className="size-4" />
+              Open inbox
+            </Link>
+          </Button>
+        </div>
       </header>
 
       <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
@@ -86,8 +111,8 @@ export default async function DashboardPage() {
         />
         <StatCard
           label="Avg. first response"
-          value="—"
-          hint="No data yet"
+          value={formatDuration(avgMinutes)}
+          hint={avgMinutes == null ? "No data yet" : "Across replied tickets"}
           icon={Timer}
         />
       </section>
@@ -99,15 +124,39 @@ export default async function DashboardPage() {
               Volume by category
             </h2>
             <span className="font-mono text-xs text-muted-foreground">
-              last 30 days
+              {totalTickets} tickets
             </span>
           </div>
           <div className="p-5">
-            <EmptyState
-              icon={BarChart3}
-              title="No tickets yet"
-              description="Once conversations start arriving, you'll see how volume breaks down by category here."
-            />
+            {volume.length === 0 ? (
+              <EmptyState
+                icon={BarChart3}
+                title="No tickets yet"
+                description="Once conversations start arriving, you'll see how volume breaks down by category here."
+              />
+            ) : (
+              <div className="space-y-3">
+                {volume.map((v) => (
+                  <div key={v.category} className="space-y-1">
+                    <div className="flex items-center justify-between text-sm">
+                      <span>{v.category}</span>
+                      <span
+                        data-signal
+                        className="font-mono text-xs text-muted-foreground"
+                      >
+                        {v.count}
+                      </span>
+                    </div>
+                    <div className="h-1.5 overflow-hidden rounded-full bg-secondary">
+                      <div
+                        className="h-full rounded-full bg-primary"
+                        style={{ width: `${(v.count / maxVolume) * 100}%` }}
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
 
@@ -116,10 +165,7 @@ export default async function DashboardPage() {
             <h2 className="font-display text-base font-semibold tracking-tight">
               Your team
             </h2>
-            <span
-              data-signal
-              className="font-mono text-xs text-muted-foreground"
-            >
+            <span data-signal className="font-mono text-xs text-muted-foreground">
               {stats.members} member{stats.members === 1 ? "" : "s"}
             </span>
           </div>
@@ -134,10 +180,11 @@ export default async function DashboardPage() {
                 {org.role}
               </span>
             </div>
-            <Button variant="outline" size="sm" disabled className="w-full gap-2">
-              <UserPlus />
-              Invite teammates
-              <SoonTag />
+            <Button asChild variant="outline" size="sm" className="w-full gap-2">
+              <Link href="/team">
+                <UserPlus className="size-4" />
+                Manage team
+              </Link>
             </Button>
           </div>
         </div>
@@ -146,21 +193,40 @@ export default async function DashboardPage() {
       <section className="rounded-xl border border-border bg-card">
         <div className="border-b border-border px-5 py-3.5">
           <h2 className="font-display text-base font-semibold tracking-tight">
-            Inbox
+            Recent activity
           </h2>
         </div>
         <div className="p-5">
-          <EmptyState
-            icon={Inbox}
-            title="Your queue is empty"
-            description="When customers reach out, their tickets land here — triage, assign and resolve them with an AI copilot at your side."
-            action={
-              <Button variant="outline" disabled className="gap-2">
-                Connect a channel
-                <SoonTag />
-              </Button>
-            }
-          />
+          {activity.length === 0 ? (
+            <EmptyState
+              icon={Inbox}
+              title="Nothing here yet"
+              description="As your team triages and replies to tickets, the latest activity shows up here."
+            />
+          ) : (
+            <ul className="space-y-2.5">
+              {activity.map((a) => (
+                <li key={a.id} className="flex items-center gap-2 text-sm">
+                  <span aria-hidden className="size-1.5 shrink-0 rounded-full bg-border" />
+                  <span className="min-w-0 flex-1 truncate">{a.description}</span>
+                  {a.ticketNumber != null && (
+                    <Link
+                      href={`/inbox/${a.ticketId}`}
+                      className="shrink-0 font-mono text-xs text-brand-strong hover:underline"
+                    >
+                      RLY-{a.ticketNumber}
+                    </Link>
+                  )}
+                  <time
+                    className="shrink-0 font-mono text-[11px] text-muted-foreground"
+                    dateTime={a.createdAt}
+                  >
+                    {formatDistanceToNow(new Date(a.createdAt), { addSuffix: true })}
+                  </time>
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
       </section>
     </div>

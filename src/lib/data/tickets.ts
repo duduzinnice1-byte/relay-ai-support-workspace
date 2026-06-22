@@ -154,11 +154,11 @@ export async function getTags(orgId: string): Promise<TicketTag[]> {
 
 export async function getCustomers(
   orgId: string,
-): Promise<{ id: string; name: string; email: string | null }[]> {
+): Promise<{ id: string; name: string; email: string | null; created_at: string }[]> {
   const supabase = await createClient();
   const { data } = await supabase
     .from("customers")
-    .select("id, name, email")
+    .select("id, name, email, created_at")
     .eq("organization_id", orgId)
     .order("name");
   return data ?? [];
