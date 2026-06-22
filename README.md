@@ -3,9 +3,9 @@
 A multi-tenant support/operations SaaS: organizations invite their team, manage
 tickets and customers, and triage from a collaborative dashboard — with an AI
 copilot that accelerates real work (summaries, tag suggestions, first-reply
-drafts). This repository contains the **foundation**: authentication,
-organizations with roles, and a protected dashboard, built so the ticketing and
-AI features slot in cleanly on top.
+drafts). It includes authentication, organizations with roles, a ticket inbox
+and detail view, customers, team management, a live metrics dashboard, an AI
+copilot, and settings — backed by unit + e2e tests and CI.
 
 > Design direction: an **operations-console / signal-relay** aesthetic — calm,
 > instrument-panel precision with monospaced "signal readouts" for IDs, SLAs and
@@ -26,6 +26,9 @@ AI features slot in cleanly on top.
 | Server state       | TanStack Query                                                 |
 | Icons / toasts     | lucide-react / sonner                                          |
 | Theming            | next-themes (class-based light/dark)                           |
+| Realtime           | Supabase Realtime (postgres_changes, RLS-scoped)              |
+| Testing            | Vitest (unit) + Playwright (e2e)                               |
+| Monitoring / CI    | `reportError` seam (Sentry-ready) · GitHub Actions            |
 
 ---
 
@@ -131,7 +134,8 @@ npm run dev
 ```
 
 Open http://localhost:3000 → **Start free** → create your account → name your
-workspace → land on the dashboard.
+workspace → land on the dashboard. As an admin, click **Load sample data** to
+populate a realistic demo (customers, tickets, tags, history).
 
 > **Email confirmation:** Supabase enables email confirmation by default. For a
 > friction-free local demo, turn it off under **Supabase → Authentication →
@@ -164,24 +168,35 @@ supabase/
 
 ---
 
-## Quality
+## Quality & testing
 
-- Production build is green (type-check + lint).
-- States covered across auth/onboarding/dashboard: loading, error, empty.
-- Accessibility: visible keyboard focus, `prefers-reduced-motion` respected,
-  semantic landmarks, labelled controls, accessible mobile navigation.
-- Validated end-to-end locally: signup → profile trigger → login → workspace
-  creation → dashboard, plus **RLS tenant isolation** (a user cannot read
-  another organization's data) and route-protection redirects.
+- **CI** (GitHub Actions): lint + typecheck + unit tests + build on every push.
+- **Unit tests** (`npm test`, Vitest): validation schemas, `slugify`, the
+  open-redirect guard, the AI mock provider, domain helpers.
+- **E2E tests** (`npm run test:e2e`, Playwright): route protection, login,
+  inbox → ticket detail, URL-persisted filters. Runs against a running app with
+  a seeded demo account; override creds with `E2E_EMAIL` / `E2E_PASSWORD`.
+- States covered across every area: loading, error (route `error.tsx` +
+  `global-error.tsx`), and empty.
+- Accessibility: visible keyboard focus, `prefers-reduced-motion`, semantic
+  landmarks, labelled controls, focus-managed mobile navigation.
+- **RLS tenant isolation** verified — a user cannot read or write another
+  organization's data.
+- Error monitoring is centralized in `src/lib/monitoring.ts` (console by
+  default) and wired to Next's `onRequestError`; plugging Sentry is a one-file
+  change.
 
 ---
 
 ## Roadmap
 
-Ticket inbox (filters, search, tags, assignment) · ticket detail with internal
-comments, history and realtime updates · dashboard metrics from live data ·
-team invitations · AI copilot (summaries, tag suggestions, reply drafts) ·
-Stripe billing (test mode) · Playwright/Vitest suites · CI and Vercel deploy.
+**Done:** ticket inbox (filters / search / tags / assignment, realtime) · ticket
+detail (internal & public comments, history, optimistic updates, AI copilot) ·
+live dashboard metrics · customers · team management & invitations · settings ·
+unit + e2e tests · CI · error-monitoring seam.
+
+**Next:** Stripe billing (test mode) · Vercel deploy + Lighthouse pass · live
+realtime for tag changes · richer per-role UI gating.
 
 ---
 
