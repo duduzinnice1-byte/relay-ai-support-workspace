@@ -27,6 +27,8 @@ import { Avatar } from "@/components/ui/avatar";
 import { StatCard } from "@/components/app/stat-card";
 import { EmptyState } from "@/components/app/empty-state";
 import { SeedButton } from "@/components/app/seed-button";
+import { Reveal } from "@/components/motion/reveal";
+import { StaggerList } from "@/components/motion/stagger-list";
 
 export const metadata: Metadata = { title: "Dashboard" };
 
@@ -65,7 +67,8 @@ export default async function DashboardPage() {
 
   return (
     <div className="mx-auto max-w-6xl space-y-6">
-      <header className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <Reveal>
+        <header className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="font-display text-2xl font-semibold tracking-tight">
             {greeting()}, {name}.
@@ -87,9 +90,10 @@ export default async function DashboardPage() {
             </Link>
           </Button>
         </div>
-      </header>
+        </header>
+      </Reveal>
 
-      <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      <StaggerList className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard
           label="Open tickets"
           value={String(stats.openTickets)}
@@ -116,7 +120,7 @@ export default async function DashboardPage() {
           hint={avgMinutes == null ? "No data yet" : "Across replied tickets"}
           icon={Timer}
         />
-      </section>
+      </StaggerList>
 
       <section className="grid gap-4 lg:grid-cols-3">
         <div className="rounded-xl border border-border bg-card lg:col-span-2">

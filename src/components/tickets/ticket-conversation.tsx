@@ -3,6 +3,7 @@
 import { useOptimistic, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { formatDistanceToNow } from "date-fns";
+import { AnimatePresence, motion } from "motion/react";
 import { Lock, Send, Sparkles, Tag as TagIcon } from "lucide-react";
 import { toast } from "sonner";
 
@@ -140,12 +141,16 @@ export function TicketConversation({
             No messages yet. Reply to the customer or leave an internal note.
           </li>
         )}
+        <AnimatePresence initial={false}>
         {comments.map((c) => {
           const author = c.author_id ? authors[c.author_id] : undefined;
           const name = author?.name ?? "Agent";
           return (
-            <li
+            <motion.li
               key={c.id}
+              initial={{ opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.2, ease: "easeOut" }}
               className={cn(
                 "rounded-lg border p-3",
                 c.is_internal
@@ -173,16 +178,27 @@ export function TicketConversation({
                 </span>
               </div>
               <p className="mt-2 whitespace-pre-wrap text-sm">{c.body}</p>
-            </li>
+            </motion.li>
           );
         })}
+        </AnimatePresence>
       </ul>
 
       {/* Copilot */}
       <div className="rounded-lg border border-border bg-secondary/40 p-3">
         <div className="flex flex-wrap items-center gap-2">
           <span className="inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
-            <Sparkles className="size-3.5 text-primary" />
+            <motion.span
+              className="inline-flex"
+              animate={busy ? { opacity: [1, 0.4, 1] } : { opacity: 1 }}
+              transition={
+                busy
+                  ? { duration: 1.2, repeat: Infinity, ease: "easeInOut" }
+                  : { duration: 0.2 }
+              }
+            >
+              <Sparkles className="size-3.5 text-primary" />
+            </motion.span>
             Copilot
           </span>
           <Button size="sm" variant="outline" onClick={runSummary} disabled={isPending}>
@@ -208,15 +224,21 @@ export function TicketConversation({
         {suggested.length > 0 && (
           <div className="mt-3 flex flex-wrap items-center gap-1.5">
             <span className="text-xs text-muted-foreground">Suggested:</span>
-            {suggested.map((t) => (
-              <button
-                key={t}
-                onClick={() => applyTag(t)}
-                className="inline-flex items-center gap-1 rounded border border-dashed border-border px-1.5 py-0.5 text-[11px] font-medium transition-colors hover:border-primary hover:text-brand-strong"
-              >
-                + {t}
-              </button>
-            ))}
+            <AnimatePresence initial={false}>
+              {suggested.map((t) => (
+                <motion.button
+                  key={t}
+                  onClick={() => applyTag(t)}
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.9 }}
+                  transition={{ duration: 0.15 }}
+                  className="inline-flex items-center gap-1 rounded border border-dashed border-border px-1.5 py-0.5 text-[11px] font-medium transition-colors hover:border-primary hover:text-brand-strong"
+                >
+                  + {t}
+                </motion.button>
+              ))}
+            </AnimatePresence>
           </div>
         )}
       </div>

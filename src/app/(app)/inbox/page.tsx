@@ -21,6 +21,8 @@ import { TicketRow } from "@/components/tickets/ticket-row";
 import { NewTicketDialog } from "@/components/tickets/new-ticket-dialog";
 import { EmptyState } from "@/components/app/empty-state";
 import { RealtimeRefresh } from "@/components/realtime/realtime-refresh";
+import { Reveal } from "@/components/motion/reveal";
+import { TicketList } from "@/components/tickets/ticket-list";
 
 export const metadata: Metadata = { title: "Inbox" };
 
@@ -72,17 +74,19 @@ export default async function InboxPage({
 
   return (
     <div className="mx-auto max-w-5xl space-y-5">
-      <header className="flex items-center justify-between gap-3">
-        <div>
-          <h1 className="font-display text-2xl font-semibold tracking-tight">
-            Inbox
-          </h1>
-          <p className="text-sm text-muted-foreground">
-            {counts.open} open · {counts.all} total
-          </p>
-        </div>
-        <NewTicketDialog customers={customers} />
-      </header>
+      <Reveal>
+        <header className="flex items-center justify-between gap-3">
+          <div>
+            <h1 className="font-display text-2xl font-semibold tracking-tight">
+              Inbox
+            </h1>
+            <p className="text-sm text-muted-foreground">
+              {counts.open} open · {counts.all} total
+            </p>
+          </div>
+          <NewTicketDialog customers={customers} />
+        </header>
+      </Reveal>
 
       <FilterBar
         counts={counts}
@@ -100,18 +104,17 @@ export default async function InboxPage({
             />
           </div>
         ) : (
-          <ul className="divide-y divide-border">
-            {tickets.map((t) => (
-              <li key={t.id}>
-                <TicketRow
-                  ticket={t}
-                  assignee={
-                    t.assignee_id ? memberMap.get(t.assignee_id) ?? null : null
-                  }
-                />
-              </li>
+          <TicketList
+            items={tickets.map((t) => (
+              <TicketRow
+                key={t.id}
+                ticket={t}
+                assignee={
+                  t.assignee_id ? memberMap.get(t.assignee_id) ?? null : null
+                }
+              />
             ))}
-          </ul>
+          />
         )}
       </div>
 

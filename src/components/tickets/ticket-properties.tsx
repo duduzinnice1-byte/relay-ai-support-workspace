@@ -1,7 +1,8 @@
 "use client";
 
-import { useOptimistic, useState, useTransition } from "react";
+import { useOptimistic, useState, useTransition, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
+import { motion } from "motion/react";
 import { Plus } from "lucide-react";
 import { toast } from "sonner";
 
@@ -28,6 +29,34 @@ import { TagChip } from "@/components/tickets/tag-chip";
 import type { TicketTag } from "@/lib/data/tickets";
 
 type Member = { userId: string; name: string };
+
+/** Flashes a "signal gold" ring on the field that just changed (optimistic
+ * write confirmation). Only the active field remounts and replays. */
+function FieldFlash({
+  active,
+  flashId,
+  children,
+}: {
+  active: boolean;
+  flashId: number;
+  children: ReactNode;
+}) {
+  return (
+    <motion.div
+      key={active ? flashId : "base"}
+      className="rounded-md"
+      initial={
+        active
+          ? { boxShadow: "0 0 0 2px color-mix(in oklab, var(--primary) 45%, transparent)" }
+          : false
+      }
+      animate={{ boxShadow: "0 0 0 0 rgba(0,0,0,0)" }}
+      transition={{ duration: 0.45, ease: "easeOut" }}
+    >
+      {children}
+    </motion.div>
+  );
+}
 
 export function TicketProperties({
   ticketId,
@@ -56,12 +85,17 @@ export function TicketProperties({
     assigneeId,
   });
   const [newTag, setNewTag] = useState("");
+  const [flashField, setFlashField] = useState<string | null>(null);
+  const [flashId, setFlashId] = useState(0);
 
   function apply(patch: {
     status?: TicketStatus;
     priority?: TicketPriority;
     assigneeId?: string | null;
   }) {
+    const field = Object.keys(patch)[0] ?? null;
+    setFlashField(field);
+    setFlashId((n) => n + 1);
     startTransition(async () => {
       setOptimistic((prev) => ({ ...prev, ...patch }));
       const res = await updateTicket(ticketId, patch);
@@ -105,54 +139,68 @@ export function TicketProperties({
     <div className="space-y-4">
       <div className="space-y-1.5">
         <Label>Status</Label>
-        <Select value={optimistic.status} onValueChange={(v) => apply({ status: v as TicketStatus })}>
-          <SelectTrigger>
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {TICKET_STATUSES.map((s) => (
-              <SelectItem key={s} value={s}>
-                {STATUS_META[s].label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <FieldFlash active={flashField === "status"} flashId={flashId}>
+          <Select
+            value={optimistic.status}
+            onValueChange={(v) => apply({ status: v as TicketStatus })}
+          >
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {TICKET_STATUSES.map((s) => (
+                <SelectItem key={s} value={s}>
+                  {STATUS_META[s].label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </FieldFlash>
       </div>
 
       <div className="space-y-1.5">
         <Label>Priority</Label>
-        <Select value={optimistic.priority} onValueChange={(v) => apply({ priority: v as TicketPriority })}>
-          <SelectTrigger>
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {TICKET_PRIORITIES.map((p) => (
-              <SelectItem key={p} value={p}>
-                {PRIORITY_META[p].label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <FieldFlash active={flashField === "priority"} flashId={flashId}>
+          <Select
+            value={optimistic.priority}
+            onValueChange={(v) => apply({ priority: v as TicketPriority })}
+          >
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {TICKET_PRIORITIES.map((p) => (
+                <SelectItem key={p} value={p}>
+                  {PRIORITY_META[p].label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </FieldFlash>
       </div>
 
       <div className="space-y-1.5">
         <Label>Assignee</Label>
-        <Select
-          value={optimistic.assigneeId ?? "unassigned"}
-          onValueChange={(v) => apply({ assigneeId: v === "unassigned" ? null : v })}
-        >
-          <SelectTrigger>
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="unassigned">Unassigned</SelectItem>
-            {members.map((m) => (
-              <SelectItem key={m.userId} value={m.userId}>
-                {m.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <FieldFlash active={flashField === "assigneeId"} flashId={flashId}>
+          <Select
+            value={optimistic.assigneeId ?? "unassigned"}
+            onValueChange={(v) =>
+              apply({ assigneeId: v === "unassigned" ? null : v })
+            }
+          >
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="unassigned">Unassigned</SelectItem>
+              {members.map((m) => (
+                <SelectItem key={m.userId} value={m.userId}>
+                  {m.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </FieldFlash>
       </div>
 
       <div className="space-y-1.5">

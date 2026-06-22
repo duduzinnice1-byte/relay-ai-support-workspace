@@ -8,6 +8,7 @@ import { TicketId } from "@/components/relay/ticket-id";
 import { StatusBadge } from "@/components/relay/status-badge";
 import { PriorityBadge } from "@/components/relay/priority-badge";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { StaggerList } from "@/components/motion/stagger-list";
 import type { TicketStatus, TicketPriority } from "@/lib/domain";
 
 const previewRows: {
@@ -86,7 +87,7 @@ export default function Home() {
       </header>
 
       <main className="mx-auto grid w-full max-w-6xl flex-1 items-center gap-12 px-6 py-10 lg:grid-cols-[1.05fr_1fr] lg:py-20">
-        <section className="flex flex-col items-start">
+        <StaggerList className="flex flex-col items-start" stagger={0.07}>
           <span className="inline-flex items-center gap-2 rounded-full border border-border bg-card px-3 py-1 text-xs font-medium text-muted-foreground">
             <Sparkles className="size-3.5 text-primary" />
             AI copilot built into the queue
@@ -126,7 +127,7 @@ export default function Home() {
               </span>
             ))}
           </div>
-        </section>
+        </StaggerList>
 
         {/* Console preview — the signature: monospaced signal readouts */}
         <section className="lg:justify-self-end">

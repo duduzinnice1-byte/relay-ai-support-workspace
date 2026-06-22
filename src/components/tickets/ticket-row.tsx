@@ -22,8 +22,12 @@ export function TicketRow({
   return (
     <Link
       href={`/inbox/${ticket.id}`}
-      className="flex items-center gap-3 px-4 py-3 transition-colors hover:bg-accent/50 focus-visible:bg-accent/50 focus-visible:outline-none"
+      className="group relative flex items-center gap-3 px-4 py-3 transition-colors hover:bg-accent/50 focus-visible:bg-accent/50 focus-visible:outline-none"
     >
+      <span
+        aria-hidden
+        className="absolute inset-y-0 left-0 w-0 bg-primary transition-[width] duration-150 group-hover:w-[2px] group-focus-visible:w-[2px] motion-reduce:transition-none"
+      />
       <PriorityBadge priority={ticket.priority} withLabel={false} />
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-center gap-2">
