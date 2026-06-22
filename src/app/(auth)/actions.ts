@@ -4,16 +4,9 @@ import { redirect } from "next/navigation";
 
 import { createClient } from "@/lib/supabase/server";
 import { loginSchema, signupSchema } from "@/lib/validation/auth";
+import { safeInternalPath } from "@/lib/safe-redirect";
 
 type ActionResult = { error: string } | void;
-
-/** Only allow redirects to internal paths to avoid open-redirects. Must start
- * with a single "/" not followed by "/" or "\" — browsers normalize "\" to "/",
- * so "/\evil.com" would otherwise become the protocol-relative "//evil.com". */
-function safePath(path: string | undefined, fallback: string): string {
-  if (path && /^\/(?![/\\])/.test(path) && !path.includes("\\")) return path;
-  return fallback;
-}
 
 export async function signIn(input: {
   email: string;
@@ -31,7 +24,7 @@ export async function signIn(input: {
     return { error: "Wrong email or password. Try again." };
   }
 
-  redirect(safePath(input.redirectTo, "/dashboard"));
+  redirect(safeInternalPath(input.redirectTo, "/dashboard"));
 }
 
 export async function signUp(input: {
