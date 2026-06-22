@@ -27,7 +27,7 @@ const NAV: NavItem[] = [
   { href: "/customers", label: "Customers", icon: Users, ready: true },
   { href: "/team", label: "Team", icon: UsersRound, ready: true },
   { href: "/reports", label: "Reports", icon: BarChart3, ready: false },
-  { href: "/settings", label: "Settings", icon: Settings, ready: false },
+  { href: "/settings", label: "Settings", icon: Settings, ready: true },
 ];
 
 export function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {

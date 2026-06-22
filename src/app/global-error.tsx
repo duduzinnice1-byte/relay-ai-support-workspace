@@ -1,11 +1,20 @@
 "use client";
 
+import { useEffect } from "react";
+
+import { reportError } from "@/lib/monitoring";
+
 export default function GlobalError({
+  error,
   reset,
 }: {
   error: Error & { digest?: string };
   reset: () => void;
 }) {
+  useEffect(() => {
+    reportError(error, { boundary: "global", digest: error.digest });
+  }, [error]);
+
   return (
     <html lang="en">
       <body

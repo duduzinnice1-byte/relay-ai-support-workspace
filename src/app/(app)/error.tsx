@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import { AlertTriangle } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { reportError } from "@/lib/monitoring";
 
 export default function AppError({
   error,
@@ -13,7 +14,7 @@ export default function AppError({
   reset: () => void;
 }) {
   useEffect(() => {
-    console.error(error);
+    reportError(error, { boundary: "app-route", digest: error.digest });
   }, [error]);
 
   return (
