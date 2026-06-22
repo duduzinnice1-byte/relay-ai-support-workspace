@@ -23,7 +23,7 @@ type NavItem = {
 
 const NAV: NavItem[] = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard, ready: true },
-  { href: "/inbox", label: "Inbox", icon: Inbox, ready: false },
+  { href: "/inbox", label: "Inbox", icon: Inbox, ready: true },
   { href: "/customers", label: "Customers", icon: Users, ready: false },
   { href: "/team", label: "Team", icon: UsersRound, ready: false },
   { href: "/reports", label: "Reports", icon: BarChart3, ready: false },
