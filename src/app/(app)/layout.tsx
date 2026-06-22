@@ -26,7 +26,7 @@ export default async function AppLayout({
     .from("profiles")
     .select("full_name, avatar_url, email")
     .eq("id", user.id)
-    .single();
+    .maybeSingle();
 
   const shellUser = {
     name: profile?.full_name || displayName(user),
