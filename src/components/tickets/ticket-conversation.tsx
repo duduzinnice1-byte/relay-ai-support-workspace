@@ -3,7 +3,7 @@
 import { useOptimistic, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { formatDistanceToNow } from "date-fns";
-import { AnimatePresence, motion } from "motion/react";
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { Lock, Send, Sparkles, Tag as TagIcon } from "lucide-react";
 import { toast } from "sonner";
 
@@ -55,6 +55,7 @@ export function TicketConversation({
   const [summary, setSummary] = useState<string | null>(null);
   const [suggested, setSuggested] = useState<string[]>([]);
   const [busy, setBusy] = useState<null | "summary" | "draft" | "tags">(null);
+  const reduce = useReducedMotion();
 
   function send() {
     const text = body.trim();
@@ -142,12 +143,12 @@ export function TicketConversation({
           </li>
         )}
         <AnimatePresence initial={false}>
-        {comments.map((c) => {
+        {comments.map((c, i) => {
           const author = c.author_id ? authors[c.author_id] : undefined;
           const name = author?.name ?? "Agent";
           return (
             <motion.li
-              key={c.id}
+              key={i}
               initial={{ opacity: 0, y: 6 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.2, ease: "easeOut" }}
@@ -190,9 +191,9 @@ export function TicketConversation({
           <span className="inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
             <motion.span
               className="inline-flex"
-              animate={busy ? { opacity: [1, 0.4, 1] } : { opacity: 1 }}
+              animate={busy && !reduce ? { opacity: [1, 0.4, 1] } : { opacity: 1 }}
               transition={
-                busy
+                busy && !reduce
                   ? { duration: 1.2, repeat: Infinity, ease: "easeInOut" }
                   : { duration: 0.2 }
               }

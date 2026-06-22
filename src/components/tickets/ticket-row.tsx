@@ -26,7 +26,7 @@ export function TicketRow({
     >
       <span
         aria-hidden
-        className="absolute inset-y-0 left-0 w-0 bg-primary transition-[width] duration-150 group-hover:w-[2px] group-focus-visible:w-[2px] motion-reduce:transition-none"
+        className="absolute inset-y-0 left-0 w-[2px] origin-left scale-x-0 bg-primary transition-transform duration-150 group-hover:scale-x-100 group-focus-visible:scale-x-100 motion-reduce:transition-none"
       />
       <PriorityBadge priority={ticket.priority} withLabel={false} />
       <div className="min-w-0 flex-1">

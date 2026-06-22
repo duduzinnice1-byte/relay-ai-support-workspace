@@ -105,15 +105,17 @@ export default async function InboxPage({
           </div>
         ) : (
           <TicketList
-            items={tickets.map((t) => (
-              <TicketRow
-                key={t.id}
-                ticket={t}
-                assignee={
-                  t.assignee_id ? memberMap.get(t.assignee_id) ?? null : null
-                }
-              />
-            ))}
+            items={tickets.map((t) => ({
+              id: t.id,
+              node: (
+                <TicketRow
+                  ticket={t}
+                  assignee={
+                    t.assignee_id ? memberMap.get(t.assignee_id) ?? null : null
+                  }
+                />
+              ),
+            }))}
           />
         )}
       </div>

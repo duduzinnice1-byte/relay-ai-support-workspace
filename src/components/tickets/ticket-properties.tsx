@@ -2,7 +2,7 @@
 
 import { useOptimistic, useState, useTransition, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
-import { motion } from "motion/react";
+import { motion, useReducedMotion } from "motion/react";
 import { Plus } from "lucide-react";
 import { toast } from "sonner";
 
@@ -41,17 +41,18 @@ function FieldFlash({
   flashId: number;
   children: ReactNode;
 }) {
+  const reduce = useReducedMotion();
   return (
     <motion.div
       key={active ? flashId : "base"}
       className="rounded-md"
       initial={
-        active
+        active && !reduce
           ? { boxShadow: "0 0 0 2px color-mix(in oklab, var(--primary) 45%, transparent)" }
           : false
       }
       animate={{ boxShadow: "0 0 0 0 rgba(0,0,0,0)" }}
-      transition={{ duration: 0.45, ease: "easeOut" }}
+      transition={{ duration: 0.3, ease: "easeOut" }}
     >
       {children}
     </motion.div>
