@@ -1,36 +1,188 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Relay — AI Support Workspace
 
-## Getting Started
+A multi-tenant support/operations SaaS: organizations invite their team, manage
+tickets and customers, and triage from a collaborative dashboard — with an AI
+copilot that accelerates real work (summaries, tag suggestions, first-reply
+drafts). This repository contains the **foundation**: authentication,
+organizations with roles, and a protected dashboard, built so the ticketing and
+AI features slot in cleanly on top.
 
-First, run the development server:
+> Design direction: an **operations-console / signal-relay** aesthetic — calm,
+> instrument-panel precision with monospaced "signal readouts" for IDs, SLAs and
+> metrics, and a single warm **signal-gold** accent. Deliberately not a default
+> SaaS template.
+
+---
+
+## Stack
+
+| Concern            | Choice                                                         |
+| ------------------ | -------------------------------------------------------------- |
+| Framework          | Next.js 16 (App Router, RSC) + TypeScript + React 19           |
+| Styling            | Tailwind CSS v4 (CSS-first `@theme`) + custom design tokens     |
+| Auth & data        | Supabase (Postgres, Auth, RLS) via `@supabase/ssr`              |
+| Validation         | Zod (shared by client forms and server actions)                |
+| Forms              | React Hook Form                                                |
+| Server state       | TanStack Query                                                 |
+| Icons / toasts     | lucide-react / sonner                                          |
+| Theming            | next-themes (class-based light/dark)                           |
+
+---
+
+## Architecture & key decisions
+
+- **Data access through `@supabase/ssr` + RLS, not a privileged ORM connection.**
+  Tenant isolation is enforced *in the database* by Row Level Security keyed off
+  the authenticated user's JWT. This is simpler and safer than querying through a
+  service-role/Drizzle connection (which would bypass RLS and require hand-rolled
+  tenant checks on every query). It also lets the app run locally with only the
+  public URL + anon key. Drizzle stays available for future service-role
+  analytics that genuinely need a direct connection.
+
+- **SQL-first migrations** in [`supabase/migrations`](./supabase/migrations).
+  Postgres is the source of truth: tables, enums, triggers, RLS policies and the
+  `create_organization` RPC live in versioned SQL, applied via the Supabase
+  GitHub integration / CLI. TypeScript types are generated from the live schema
+  into [`src/lib/database.types.ts`](./src/lib/database.types.ts).
+
+- **Atomic organization creation via a `SECURITY DEFINER` RPC.** Creating an org
+  and the owner's `admin` membership in one call avoids the RLS chicken-and-egg
+  (you can't insert a membership for an org you're not yet a member of).
+
+- **Non-recursive RLS via private helper functions.** Membership/role checks
+  (`private.is_org_member`, `private.has_org_role`, …) are `SECURITY DEFINER`
+  functions in a non-exposed `private` schema, so policies on
+  `organization_members` don't recurse. `auth.uid()` is wrapped in
+  `(select auth.uid())` so it's evaluated once per query (Supabase RLS perf
+  guidance), and every FK / policy column is indexed.
+
+- **Route protection in `proxy.ts`** (Next 16's renamed middleware). The session
+  is refreshed on every request; unauthenticated hits on `/dashboard` or
+  `/onboarding` redirect to `/login?redirect=…`, and authenticated hits on the
+  auth pages bounce to `/dashboard`.
+
+---
+
+## Data model
+
+`profiles` (mirrors `auth.users`, auto-created by trigger) ·
+`organizations` (name, **slug**, **owner_id**, created_at) ·
+`organization_members` (role: `admin` | `manager` | `agent`) ·
+plus the forward-looking support tables — `customers`, `tickets`,
+`ticket_comments` (internal/public), `ticket_events` (audit), `tags`,
+`ticket_tags`, `invitations`, `subscriptions` — all with multi-tenant RLS so the
+inbox, customers and billing features can be built without reworking access
+control.
+
+The org creator becomes **Admin**. Roles are designed for least privilege:
+agents work the queue, managers manage the team and data, admins also control
+the workspace and (future) billing.
+
+---
+
+## Getting started
+
+### 1. Prerequisites
+
+- Node.js 20+ and npm
+- A Supabase project (free tier is fine)
+
+### 2. Install
+
+```bash
+npm install
+```
+
+### 3. Environment
+
+Copy the example and fill in your project values:
+
+```bash
+cp .env.example .env.local
+```
+
+| Variable                        | Where to find it                                   | Required for           |
+| ------------------------------- | -------------------------------------------------- | ---------------------- |
+| `NEXT_PUBLIC_SUPABASE_URL`      | Supabase → Project Settings → API                  | auth + data            |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase → Project Settings → API                  | auth + data            |
+| `SUPABASE_SERVICE_ROLE_KEY`     | Supabase → Project Settings → API (server-only)    | future admin ops       |
+| `DATABASE_URL` / `DIRECT_URL`   | Supabase → Project Settings → Database             | future Drizzle queries |
+
+> The auth + organizations + dashboard flow runs with just the **URL** and
+> **anon key** — RLS does the rest. The anon key is browser-safe by design.
+
+### 4. Database
+
+Migrations live in [`supabase/migrations`](./supabase/migrations). Apply them
+with the Supabase CLI:
+
+```bash
+supabase link --project-ref <your-project-ref>
+supabase db push
+```
+
+(Or connect the repo in **Supabase → Integrations → GitHub**, which applies
+migrations on push to `main`.)
+
+### 5. Run
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open http://localhost:3000 → **Start free** → create your account → name your
+workspace → land on the dashboard.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+> **Email confirmation:** Supabase enables email confirmation by default. For a
+> friction-free local demo, turn it off under **Supabase → Authentication →
+> Providers → Email → "Confirm email"**, or confirm the user from the dashboard.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+---
 
-## Learn More
+## Project structure
 
-To learn more about Next.js, take a look at the following resources:
+```
+src/
+  app/
+    (auth)/            login & signup (shared centered layout, server actions)
+    onboarding/        create-workspace flow (RPC-backed)
+    (app)/             protected area: shell layout + dashboard
+    page.tsx           marketing landing
+    proxy.ts           session refresh + route protection (Next 16)
+  components/
+    ui/                design-system primitives (button, card, input, …)
+    relay/             brand/signature components (ticket id, status, priority)
+    app/               app shell: sidebar, topbar, org switcher, user menu
+  lib/
+    supabase/          browser/server clients + session helper
+    data/              org & dashboard queries
+    validation/        Zod schemas
+    domain.ts          shared ticket/role vocabulary + tokens
+supabase/
+  migrations/          versioned SQL (schema, RLS, RPC, triggers)
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+---
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Quality
 
-## Deploy on Vercel
+- Production build is green (type-check + lint).
+- States covered across auth/onboarding/dashboard: loading, error, empty.
+- Accessibility: visible keyboard focus, `prefers-reduced-motion` respected,
+  semantic landmarks, labelled controls, accessible mobile navigation.
+- Validated end-to-end locally: signup → profile trigger → login → workspace
+  creation → dashboard, plus **RLS tenant isolation** (a user cannot read
+  another organization's data) and route-protection redirects.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+---
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Roadmap
+
+Ticket inbox (filters, search, tags, assignment) · ticket detail with internal
+comments, history and realtime updates · dashboard metrics from live data ·
+team invitations · AI copilot (summaries, tag suggestions, reply drafts) ·
+Stripe billing (test mode) · Playwright/Vitest suites · CI and Vercel deploy.
+
+---
+
+_Portfolio-grade demo. Built with Next.js, Supabase and a custom design system._
