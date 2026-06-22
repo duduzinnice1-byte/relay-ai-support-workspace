@@ -18,7 +18,10 @@ jobs:
           node-version: 20
           cache: npm
 
-      - run: npm ci
+      # `npm install` (not `npm ci`): the lockfile is generated on Windows and
+      # omits Linux-only optional native deps (Tailwind oxide / lightningcss,
+      # @emnapi/*), which makes strict `npm ci` fail on the Linux runner.
+      - run: npm install --no-audit --no-fund
 
       - name: Lint
         run: npm run lint
