@@ -78,26 +78,30 @@ export async function getStatusCounts(
   orgId: string,
 ): Promise<Record<TicketStatus, number> & { all: number }> {
   const supabase = await createClient();
-  const { data } = await supabase
-    .from("tickets")
-    .select("status")
-    .eq("organization_id", orgId)
-    .limit(2000);
+  const base = () =>
+    supabase
+      .from("tickets")
+      .select("*", { count: "exact", head: true })
+      .eq("organization_id", orgId);
 
-  const counts = {
-    all: 0,
-    open: 0,
-    pending: 0,
-    on_hold: 0,
-    resolved: 0,
-    closed: 0,
-  } as Record<TicketStatus, number> & { all: number };
+  // Exact counts regardless of volume (no client-side row cap).
+  const [all, open, pending, onHold, resolved, closed] = await Promise.all([
+    base(),
+    base().eq("status", "open"),
+    base().eq("status", "pending"),
+    base().eq("status", "on_hold"),
+    base().eq("status", "resolved"),
+    base().eq("status", "closed"),
+  ]);
 
-  for (const row of data ?? []) {
-    counts.all += 1;
-    counts[row.status] += 1;
-  }
-  return counts;
+  return {
+    all: all.count ?? 0,
+    open: open.count ?? 0,
+    pending: pending.count ?? 0,
+    on_hold: onHold.count ?? 0,
+    resolved: resolved.count ?? 0,
+    closed: closed.count ?? 0,
+  };
 }
 
 export async function getTicket(

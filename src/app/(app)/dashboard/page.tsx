@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 
 import { getUser, displayName } from "@/lib/auth";
+import { ticketRef } from "@/lib/domain";
 import {
   getActiveOrganization,
   getDashboardStats,
@@ -214,7 +215,7 @@ export default async function DashboardPage() {
                       href={`/inbox/${a.ticketId}`}
                       className="shrink-0 font-mono text-xs text-brand-strong hover:underline"
                     >
-                      RLY-{a.ticketNumber}
+                      {ticketRef(a.ticketNumber)}
                     </Link>
                   )}
                   <time

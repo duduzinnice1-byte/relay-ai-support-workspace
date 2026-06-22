@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Menu, X } from "lucide-react";
 
 import { RelayMark } from "@/components/relay/relay-mark";
@@ -56,6 +56,9 @@ export function AppShell({
   children: React.ReactNode;
 }) {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const closeRef = useRef<HTMLButtonElement>(null);
+  const firstRender = useRef(true);
 
   useEffect(() => {
     if (!mobileOpen) return;
@@ -64,6 +67,16 @@ export function AppShell({
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
+  }, [mobileOpen]);
+
+  // Move focus into the drawer on open, and back to the trigger on close.
+  useEffect(() => {
+    if (firstRender.current) {
+      firstRender.current = false;
+      return;
+    }
+    if (mobileOpen) closeRef.current?.focus();
+    else triggerRef.current?.focus();
   }, [mobileOpen]);
 
   return (
@@ -88,6 +101,7 @@ export function AppShell({
           <div className="absolute inset-y-0 left-0 flex w-72 max-w-[82%] flex-col border-r border-sidebar-border bg-sidebar shadow-xl">
             <div className="flex justify-end p-2">
               <Button
+                ref={closeRef}
                 variant="ghost"
                 size="icon"
                 aria-label="Close navigation"
@@ -107,9 +121,10 @@ export function AppShell({
         </div>
       )}
 
-      <div className="flex min-w-0 flex-1 flex-col">
+      <div className="flex min-w-0 flex-1 flex-col" inert={mobileOpen || undefined}>
         <header className="sticky top-0 z-30 flex h-14 items-center gap-2 border-b border-border bg-background/80 px-4 backdrop-blur-sm">
           <Button
+            ref={triggerRef}
             variant="ghost"
             size="icon"
             className="lg:hidden"

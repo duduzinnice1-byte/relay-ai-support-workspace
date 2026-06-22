@@ -7,9 +7,11 @@ import { loginSchema, signupSchema } from "@/lib/validation/auth";
 
 type ActionResult = { error: string } | void;
 
-/** Only allow redirects to internal paths to avoid open-redirects. */
+/** Only allow redirects to internal paths to avoid open-redirects. Must start
+ * with a single "/" not followed by "/" or "\" — browsers normalize "\" to "/",
+ * so "/\evil.com" would otherwise become the protocol-relative "//evil.com". */
 function safePath(path: string | undefined, fallback: string): string {
-  if (path && path.startsWith("/") && !path.startsWith("//")) return path;
+  if (path && /^\/(?![/\\])/.test(path) && !path.includes("\\")) return path;
   return fallback;
 }
 
@@ -46,7 +48,10 @@ export async function signUp(input: {
   const { data, error } = await supabase.auth.signUp({
     email: parsed.data.email,
     password: parsed.data.password,
-    options: { data: { full_name: parsed.data.fullName } },
+    options: {
+      data: { full_name: parsed.data.fullName },
+      emailRedirectTo: `${process.env.NEXT_PUBLIC_APP_URL ?? ""}/auth/callback?next=/onboarding`,
+    },
   });
 
   if (error) {

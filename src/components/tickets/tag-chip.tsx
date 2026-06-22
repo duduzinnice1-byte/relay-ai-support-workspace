@@ -1,11 +1,15 @@
+import { X } from "lucide-react";
+
 import { cn } from "@/lib/utils";
 import type { TicketTag } from "@/lib/data/tickets";
 
 export function TagChip({
   tag,
+  onRemove,
   className,
 }: {
   tag: Pick<TicketTag, "name" | "color">;
+  onRemove?: () => void;
   className?: string;
 }) {
   return (
@@ -21,6 +25,16 @@ export function TagChip({
         style={{ backgroundColor: tag.color || "var(--brand)" }}
       />
       {tag.name}
+      {onRemove && (
+        <button
+          type="button"
+          aria-label={`Remove ${tag.name}`}
+          onClick={onRemove}
+          className="text-muted-foreground transition-colors hover:text-destructive"
+        >
+          <X className="size-3" />
+        </button>
+      )}
     </span>
   );
 }

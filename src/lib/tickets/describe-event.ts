@@ -34,6 +34,10 @@ export function describeEvent(
       return `${actor} unassigned this ticket`;
     case "commented":
       return `${actor} ${data.internal ? "added an internal note" : "replied to the customer"}`;
+    case "tagged":
+      return `${actor} added a tag`;
+    case "untagged":
+      return `${actor} removed a tag`;
     default:
       return `${actor} updated the ticket`;
   }

@@ -48,6 +48,11 @@ export function FilterBar({
 
   const [search, setSearch] = useState(q);
 
+  // Keep the input in sync when the URL query changes externally (back/forward).
+  useEffect(() => {
+    setSearch(q);
+  }, [q]);
+
   const update = (patch: Record<string, string | null>) => {
     const next = new URLSearchParams(params.toString());
     for (const [k, v] of Object.entries(patch)) {
@@ -117,7 +122,7 @@ export function FilterBar({
           value={priority || "any"}
           onValueChange={(v) => update({ priority: v === "any" ? null : v })}
         >
-          <SelectTrigger className="w-[8.5rem]">
+          <SelectTrigger className="w-[8.5rem]" aria-label="Filter by priority">
             <SelectValue placeholder="Priority" />
           </SelectTrigger>
           <SelectContent>
@@ -134,7 +139,7 @@ export function FilterBar({
           value={assignee || "any"}
           onValueChange={(v) => update({ assignee: v === "any" ? null : v })}
         >
-          <SelectTrigger className="w-[9.5rem]">
+          <SelectTrigger className="w-[9.5rem]" aria-label="Filter by assignee">
             <SelectValue placeholder="Assignee" />
           </SelectTrigger>
           <SelectContent>
@@ -153,7 +158,7 @@ export function FilterBar({
             value={tag || "any"}
             onValueChange={(v) => update({ tag: v === "any" ? null : v })}
           >
-            <SelectTrigger className="w-[8.5rem]">
+            <SelectTrigger className="w-[8.5rem]" aria-label="Filter by tag">
               <SelectValue placeholder="Tag" />
             </SelectTrigger>
             <SelectContent>

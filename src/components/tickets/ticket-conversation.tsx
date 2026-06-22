@@ -77,36 +77,45 @@ export function TicketConversation({
   function runSummary() {
     setBusy("summary");
     startTransition(async () => {
-      const res = await summarizeTicket(ticketId);
-      setBusy(null);
-      if ("error" in res) toast.error(res.error);
-      else setSummary(res.summary);
+      try {
+        const res = await summarizeTicket(ticketId);
+        if ("error" in res) toast.error(res.error);
+        else setSummary(res.summary);
+      } finally {
+        setBusy(null);
+      }
     });
   }
 
   function runDraft() {
     setBusy("draft");
     startTransition(async () => {
-      const res = await draftTicketReply(ticketId);
-      setBusy(null);
-      if ("error" in res) {
-        toast.error(res.error);
-        return;
+      try {
+        const res = await draftTicketReply(ticketId);
+        if ("error" in res) {
+          toast.error(res.error);
+          return;
+        }
+        setBody(res.draft);
+        setIsInternal(false);
+        toast.success("Draft inserted — review before sending");
+      } finally {
+        setBusy(null);
       }
-      setBody(res.draft);
-      setIsInternal(false);
-      toast.success("Draft inserted — review before sending");
     });
   }
 
   function runSuggestTags() {
     setBusy("tags");
     startTransition(async () => {
-      const res = await suggestTicketTags(ticketId);
-      setBusy(null);
-      if ("error" in res) toast.error(res.error);
-      else if (res.tags.length === 0) toast.info("No new tags to suggest");
-      else setSuggested(res.tags);
+      try {
+        const res = await suggestTicketTags(ticketId);
+        if ("error" in res) toast.error(res.error);
+        else if (res.tags.length === 0) toast.info("No new tags to suggest");
+        else setSuggested(res.tags);
+      } finally {
+        setBusy(null);
+      }
     });
   }
 

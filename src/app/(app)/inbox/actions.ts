@@ -48,16 +48,6 @@ export async function createTicket(
 
   const supabase = await createClient();
 
-  // Next per-org ticket number (the trigger is a fallback for null values).
-  const { data: maxRow } = await supabase
-    .from("tickets")
-    .select("number")
-    .eq("organization_id", org.organization.id)
-    .order("number", { ascending: false })
-    .limit(1)
-    .maybeSingle();
-  const nextNumber = (maxRow?.number ?? 0) + 1;
-
   const { data, error } = await supabase
     .from("tickets")
     .insert({
@@ -68,7 +58,7 @@ export async function createTicket(
       category: parsed.data.category || null,
       customer_id: parsed.data.customerId ?? null,
       created_by: user.id,
-      number: nextNumber,
+      number: 0, // assigned atomically by the set_ticket_number trigger
     })
     .select("id")
     .single();
@@ -80,6 +70,7 @@ export async function createTicket(
   });
 
   revalidatePath("/inbox");
+  revalidatePath("/dashboard");
   return { ok: true, ticketId: data.id };
 }
 
@@ -125,6 +116,17 @@ export async function updateTicket(
     parsed.data.assigneeId !== undefined &&
     parsed.data.assigneeId !== current.assignee_id
   ) {
+    if (parsed.data.assigneeId) {
+      const { data: member } = await supabase
+        .from("organization_members")
+        .select("user_id")
+        .eq("organization_id", current.organization_id)
+        .eq("user_id", parsed.data.assigneeId)
+        .maybeSingle();
+      if (!member) {
+        return { error: "Assignee must be a member of this workspace." };
+      }
+    }
     patch.assignee_id = parsed.data.assigneeId;
     events.push({
       type: parsed.data.assigneeId ? "assigned" : "unassigned",
@@ -143,6 +145,7 @@ export async function updateTicket(
 
   revalidatePath(`/inbox/${ticketId}`);
   revalidatePath("/inbox");
+  revalidatePath("/dashboard");
   return { ok: true };
 }
 
@@ -170,12 +173,14 @@ export async function addComment(input: unknown): Promise<Result> {
   });
   if (error) return { error: error.message };
 
-  // First public reply stamps the response time (powers the dashboard metric).
-  if (!parsed.data.isInternal && !ticket.first_response_at) {
+  // First public reply stamps the response time. Atomic compare-and-set
+  // (.is null) so only the first reply wins, regardless of concurrency.
+  if (!parsed.data.isInternal) {
     await supabase
       .from("tickets")
       .update({ first_response_at: new Date().toISOString() })
-      .eq("id", parsed.data.ticketId);
+      .eq("id", parsed.data.ticketId)
+      .is("first_response_at", null);
   }
 
   await logEvent(supabase, ticket.organization_id, parsed.data.ticketId, user.id, "commented", {
@@ -183,6 +188,7 @@ export async function addComment(input: unknown): Promise<Result> {
   });
 
   revalidatePath(`/inbox/${parsed.data.ticketId}`);
+  revalidatePath("/dashboard");
   return { ok: true };
 }
 
@@ -213,7 +219,16 @@ export async function setTicketTag(
   tagId: string,
   attach: boolean,
 ): Promise<Result> {
+  const user = await getUser();
+  if (!user) return { error: "Not authenticated." };
+
   const supabase = await createClient();
+  const { data: ticket } = await supabase
+    .from("tickets")
+    .select("organization_id")
+    .eq("id", ticketId)
+    .maybeSingle();
+  if (!ticket) return { error: "Ticket not found." };
 
   if (attach) {
     const { error } = await supabase
@@ -229,7 +244,17 @@ export async function setTicketTag(
     if (error) return { error: error.message };
   }
 
+  await logEvent(
+    supabase,
+    ticket.organization_id,
+    ticketId,
+    user.id,
+    attach ? "tagged" : "untagged",
+    { tagId },
+  );
+
   revalidatePath(`/inbox/${ticketId}`);
+  revalidatePath("/inbox");
   return { ok: true };
 }
 

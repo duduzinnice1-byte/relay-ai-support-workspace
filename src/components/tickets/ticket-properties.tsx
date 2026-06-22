@@ -2,7 +2,7 @@
 
 import { useOptimistic, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Plus, X } from "lucide-react";
+import { Plus } from "lucide-react";
 import { toast } from "sonner";
 
 import {
@@ -24,6 +24,7 @@ import {
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { TagChip } from "@/components/tickets/tag-chip";
 import type { TicketTag } from "@/lib/data/tickets";
 
 type Member = { userId: string; name: string };
@@ -166,25 +167,7 @@ export function TicketProperties({
             <span className="text-sm text-muted-foreground">No tags</span>
           )}
           {attachedTags.map((t) => (
-            <span
-              key={t.id}
-              className="inline-flex items-center gap-1 rounded border border-border px-1.5 py-0.5 text-[11px] font-medium"
-            >
-              <span
-                aria-hidden
-                className="size-1.5 rounded-full"
-                style={{ backgroundColor: t.color || "var(--brand)" }}
-              />
-              {t.name}
-              <button
-                type="button"
-                aria-label={`Remove ${t.name}`}
-                onClick={() => detach(t.id)}
-                className="text-muted-foreground hover:text-destructive"
-              >
-                <X className="size-3" />
-              </button>
-            </span>
+            <TagChip key={t.id} tag={t} onRemove={() => detach(t.id)} />
           ))}
         </div>
 
