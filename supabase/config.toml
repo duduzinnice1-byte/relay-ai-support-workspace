@@ -1,0 +1,4 @@
+# Supabase project config — links this repo to the hosted project for the
+# GitHub integration and the Supabase CLI. Run `supabase init` to expand this
+# with local-dev settings if you adopt the CLI workflow.
+project_id = "xhtuyeuucxwfoxoscuzn"
