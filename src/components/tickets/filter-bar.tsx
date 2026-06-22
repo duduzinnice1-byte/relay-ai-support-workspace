@@ -48,10 +48,13 @@ export function FilterBar({
 
   const [search, setSearch] = useState(q);
 
-  // Keep the input in sync when the URL query changes externally (back/forward).
-  useEffect(() => {
+  // Resync the input when the URL query changes externally (back/forward),
+  // using React's render-time adjustment pattern (no effect, no cascade).
+  const [prevQ, setPrevQ] = useState(q);
+  if (q !== prevQ) {
+    setPrevQ(q);
     setSearch(q);
-  }, [q]);
+  }
 
   const update = (patch: Record<string, string | null>) => {
     const next = new URLSearchParams(params.toString());

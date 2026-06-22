@@ -10,6 +10,9 @@ export function ThemeToggle() {
   const { resolvedTheme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
 
+  // next-themes: read the resolved theme only after mount to avoid a hydration
+  // mismatch. This one-shot mount flag is the intended pattern.
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => setMounted(true), []);
 
   const isDark = resolvedTheme === "dark";
